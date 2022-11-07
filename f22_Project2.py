@@ -25,6 +25,33 @@ def get_listings_from_search_results(html_file):
         ('Loft in Mission District', 210, '1944564'),  # example
     ]
     """
+    fopen = open(html_file)
+    
+    title_ = []
+    price_ = []
+    list_id = []
+
+    soup = BeautifulSoup(fopen, 'html.parser')
+    info= soup.find_all('div', class_ = "t1jojoys dir dir-ltr")
+    price = soup.find_all('span', class_= "a8jt5op dir dir-ltr")
+
+
+    for items in info:
+        if (items.text.strip()[0] == '$'):
+            price_.append(int(items.text.strip()[1:4]))
+
+    for items in price:
+        list_id.append(items.get('id')[6:])
+        title_.append(items.text.strip())
+
+    flist = []
+
+    for f in range(len(title_)):
+        tup = (title_[f], price_[f], list_id[f])
+        flist.append(tup)
+
+    fopen.close()
+    return tup
     pass
 
 
@@ -52,6 +79,24 @@ def get_listing_information(listing_id):
         number of bedrooms
     )
     """
+    filename = 'html_files/listing_' + listing_id + '.html'
+
+    soup = BeautifulSoup(filename, 'html.parser')
+
+    id_info = []
+
+    policy = soup.find_all('span', class_= "ll4r2nl dir dir-ltr")
+    id_info.append(policy)
+
+    room_type = soup.find_all('span', class_ = "t1h65ots dir dir-ltr")
+    id_info.append(room_type)
+
+    num_room = soup.find_all('span', class_ = "s1b4clln dir dir-ltr")
+    id_info.append(num_room)
+
+    tup = id_info
+    return tup
+  
     pass
 
 
@@ -139,7 +184,7 @@ def extra_credit(listing_id):
 class TestCases(unittest.TestCase):
 
     def test_get_listings_from_search_results(self):
-        # call get_listings_from_search_results("html_files/mission_district_search_results.html")
+        get_listings_from_search_results("html_files/mission_district_search_results.html")
         # and save to a local variable
         listings = get_listings_from_search_results("html_files/mission_district_search_results.html")
         # check that the number of listings extracted is correct (20 listings)
