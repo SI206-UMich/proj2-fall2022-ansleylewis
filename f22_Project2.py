@@ -90,6 +90,12 @@ def get_listing_information(listing_id):
     num_ = soup.find('li', class_="f19phm7j dir dir-ltr")
     for i in num_.find('span', class_='ll4r2nl dir dir-ltr'): 
         policy_num = i.text.strip()
+        if ('pending' in policy_num or 'Pending' in policy_num):
+            policy_num = 'Pending'
+        elif (policy_num[0] == 'License'):
+            policy_num = 'Exempt'
+        else:
+            policy_num = policy_num
 
     # room type from individual listing 
     rm_t = soup.find('h2', class_="_14i3z6h")
@@ -111,9 +117,7 @@ def get_listing_information(listing_id):
         bedrooms =int(x[0][0])
 
     # tuple of each individual listing
-    final_list = ()
     tup = (policy_num, typeroom, bedrooms)
-    final_list += tup
 
     f.close()
     return tup
@@ -143,8 +147,6 @@ def get_detailed_listing_database(html_file):
         final_l.append(i + snd)
     
     return final_l
-
-
     pass
 
 
@@ -223,7 +225,6 @@ def check_policy_numbers(data):
             incorrectlist.append(id_lst[items])
 
     return incorrectlist
-
     pass
 
 
