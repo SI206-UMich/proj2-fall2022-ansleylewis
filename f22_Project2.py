@@ -1,3 +1,4 @@
+# worked with Casey Sesto and Mari Jaoshvili
 from xml.sax import parseString
 from bs4 import BeautifulSoup
 import re
@@ -25,33 +26,34 @@ def get_listings_from_search_results(html_file):
         ('Loft in Mission District', 210, '1944564'),  # example
     ]
     """
-    fopen = open(html_file)
+    f = open(html_file)
     
     title_ = []
     price_ = []
     list_id = []
 
-    soup = BeautifulSoup(fopen, 'html.parser')
+    soup = BeautifulSoup(f, 'html.parser')
     info= soup.find_all('div', class_ = "t1jojoys dir dir-ltr")
     price = soup.find_all('span', class_= "a8jt5op dir dir-ltr")
 
 
-    for items in info:
+    for items in price:
         if (items.text.strip()[0] == '$'):
             price_.append(int(items.text.strip()[1:4]))
 
-    for items in price:
+    for items in info:
         list_id.append(items.get('id')[6:])
         title_.append(items.text.strip())
 
     flist = []
 
-    for f in range(len(title_)):
-        tup = (title_[f], price_[f], list_id[f])
+    for i in range(len(title_)):
+        tup = (title_[i], price_[i], list_id[i])
         flist.append(tup)
 
-    fopen.close()
-    return tup
+    f.close()
+
+    return flist
     pass
 
 
@@ -80,21 +82,40 @@ def get_listing_information(listing_id):
     )
     """
     filename = 'html_files/listing_' + listing_id + '.html'
+    f = open(filename)
 
-    soup = BeautifulSoup(filename, 'html.parser')
+    soup = BeautifulSoup(f, 'html.parser')
 
-    id_info = []
+    # policy number from individual listing
+    num_ = soup.find('li', class_="f19phm7j dir dir-ltr")
+    for i in num_.find('span', class_='ll4r2nl dir dir-ltr'): 
+        policy_num = i.text.strip()
 
-    policy = soup.find_all('span', class_= "ll4r2nl dir dir-ltr")
-    id_info.append(policy)
+    # room type from individual listing 
+    rm_t = soup.find('h2', class_="_14i3z6h")
+    if rm_t.get('Private') == True:
+        typeroom = 'Private Room'
+    elif rm_t.get('Shared') == True:
+        typeroom = 'Shared Room'
+    else: 
+        typeroom = 'Entire Room'
 
-    room_type = soup.find_all('span', class_ = "t1h65ots dir dir-ltr")
-    id_info.append(room_type)
+    # number of bedrooms from individual listing
+    numRoom = soup.find_all('li', class_='l7n4lsf dir dir-ltr')
+    reg = '\d\s*\w*\s*bedroom|Studio'
+    numRoom = str(numRoom)
+    x = re.findall(reg, numRoom)
+    if x[0] == 'Studio':
+        bedrooms = 1 
+    else: 
+        bedrooms =int(x[0][0])
 
-    num_room = soup.find_all('span', class_ = "s1b4clln dir dir-ltr")
-    id_info.append(num_room)
+    # tuple of each individual listing
+    final_list = ()
+    tup = (policy_num, typeroom, bedrooms)
+    final_list += tup
 
-    tup = id_info
+    f.close()
     return tup
   
     pass
@@ -114,6 +135,16 @@ def get_detailed_listing_database(html_file):
         ...
     ]
     """
+    final_l = []
+    frt = get_listings_from_search_results(html_file)
+
+    for i in frt: 
+        snd = get_listing_information(i[2])
+        final_l.append(i + snd)
+    
+    return final_l
+
+
     pass
 
 
@@ -139,6 +170,19 @@ def write_csv(data, filename):
 
     This function should not return anything.
     """
+    f = open(filename, 'w')
+    f.write("Listing Title,Cost,Listing ID,Policy Number,Place Type,Number of Bedrooms")
+    f.write('\n')
+    sorted_data = sorted(data, key = lambda t:t[1])
+    for i in sorted_data:
+        l = ""
+        for d in i:
+            l += str(d) + ","
+        f.write(l.rstrip(','))
+        f.write('\n')
+
+    f.close()
+
     pass
 
 
@@ -161,6 +205,25 @@ def check_policy_numbers(data):
     ]
 
     """
+    policy_str = ""
+    plist = []
+    id_lst = []
+    correctlist = []
+    incorrectlist = []
+    for i in data:
+        policy_str += (i[3] + " ")
+        plist.append(i[3])
+        id_lst.append(i[2])
+
+    reg = 'STR-000\d{4}|20\d{2}-00\d{4}STR|Pending|Exempt'
+
+    x = re.findall(reg, policy_str)
+    for items in range(len(plist)):
+        if plist[items] not in x:
+            incorrectlist.append(id_lst[items])
+
+    return incorrectlist
+
     pass
 
 
